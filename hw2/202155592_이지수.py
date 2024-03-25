@@ -142,7 +142,7 @@ def part2_1():
 # part 2-2
 def part2_2():
     # 이미지를 불러오기 
-    im = Image.open('hw2/3a_lion.bmp')
+    im = Image.open('hw2/3b_tiger.bmp')
     # 이미지 모드를 RGB로 변환
     im = im.convert('RGB')
 
@@ -191,9 +191,27 @@ def part2_3():
 
     # low frequency
     low_freq_channels = [gaussconvolve2d(channel, 5) for channel in channels]
+
+    #**************************#
+
+    # 이미지를 불러오기 
+    im2 = Image.open('hw2/3b_tiger.bmp')
+    # 이미지 모드를 RGB로 변환
+    im2 = im2.convert('RGB')
+    
+    # 이미지를 numpy array로 변환
+    im_array2 = np.asarray(im2, dtype=np.float32)
+
+    # 각 채널(R, G, B)을 분리
+    # 배열에서 모든 가로와 세로 픽셀을 포함하지만 채널은 i로 지정된 특정 채널만을 선택
+    # 이렇게 하여 i가 0일 때는 R, 1일 때는 G, 2일 때는 B 채널을 가져온다.
+    channels2 = [im_array2[:, :, i] for i in range(3)]
+
+    # low frequency
+    low_freq_channels2 = [gaussconvolve2d(channel, 5) for channel in channels2]
     
     # high frequency
-    high_freq_channels = [channel - low for channel, low in zip(channels, low_freq_channels)]
+    high_freq_channels = [channel - low for channel, low in zip(channels2, low_freq_channels2)]
     
     # pixel 값의 범위를 0과 255 사이로 조정하여 artifact 제거
     low_freq_channels_clamped = [np.clip(channel, 0, 255) for channel in low_freq_channels]
@@ -214,30 +232,30 @@ def part2_3():
     hybrid_im.show()
 
 
-# test
-# part 1-1
-print(boxfilter(3))
-print(boxfilter(4))
-print(boxfilter(7))
+# # test
+# # part 1-1
+# print(boxfilter(3))
+# print(boxfilter(4))
+# print(boxfilter(7))
 
-# part 1-2
-print(gauss1d(0.3))
-print(gauss1d(0.5))
-print(gauss1d(1))
-print(gauss1d(2))
+# # part 1-2
+# print(gauss1d(0.3))
+# print(gauss1d(0.5))
+# print(gauss1d(1))
+# print(gauss1d(2))
 
-# part 1-3
-print(gauss2d(0.5))
-print(gauss2d(1))
+# # part 1-3
+# print(gauss2d(0.5))
+# print(gauss2d(1))
 
-# part 1-4 (c), (d)
-part1_4()
+# # part 1-4 (c), (d)
+# part1_4()
 
-# part 2-1
-part2_1()
+# # part 2-1
+# part2_1()
     
-# part 2-2
-part2_2()
+# # part 2-2
+# part2_2()
 
-# part 2-3
-part2_3()
+# # part 2-3
+# part2_3()
