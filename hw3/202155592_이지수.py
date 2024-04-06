@@ -124,6 +124,11 @@ def sobel_filters(img):
     Ix = convolve2d(img, x_filter) 
     Iy = convolve2d(img, y_filter)
     
+    # x-axis gradient image
+    Image.fromarray(np.abs(Ix).astype(np.uint8)).save('./x_axis_gradient.bmp')
+    # y-axis gradient image
+    Image.fromarray(np.abs(Iy).astype(np.uint8)).save('./y_axis_gradient.bmp')
+
     # Magnitude of gradient 구하기
     # np.hypot(x1, x2)는 sqrt(x1^2 + x2^2)와 동일
     G = np.hypot(Ix, Iy)
