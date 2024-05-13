@@ -30,7 +30,43 @@ def RANSACFilter(
     assert isinstance(orient_agreement, float)
     assert isinstance(scale_agreement, float)
     ## START
-    
+    largest_set = []
+
+    for _ in range(10):
+        i, j = random.choice(matched_pairs) # 랜덤으로 하나의 match 선택
+        consistent_set = [(i, j)] # 초기 match를 포함
+
+        # 랜덤으로 선택된 match의 feature 정보 추출
+        row_i, col_i, scale_i, orientation_i = keypoints1[i]
+        row_j, col_j, scale_j, orientation_j = keypoints2[j]
+        
+        # orientation 차이, scale 차이 계산
+        base_orientation_difference = (orientation_j - orientation_i) % (2 * np.pi)
+        base_scale_difference = scale_j / scale_i
+
+        for k, l in matched_pairs:
+            if (k, l) == (i, j):
+                continue
+            # match의 feature 정보 추출
+            row_k, col_k, scale_k, orientation_k = keypoints1[k]
+            row_l, col_l, scale_l, orientation_l = keypoints2[l]
+            
+            # orientation 차이, scale 차이 계산
+            orientation_difference = (orientation_l - orientation_k) % (2 * np.pi)
+            scale_difference = scale_l / scale_k
+
+            # 하나의 match가 다른 match와 consistent한지 확인
+            orientation_difference = (np.abs(orientation_difference - base_orientation_difference) < np.deg2rad(orient_agreement)) or (np.abs(orientation_difference - base_orientation_difference) > (2 * np.pi - np.deg2rad(orient_agreement)))
+            scale_difference = base_scale_difference * (1 - scale_agreement) < scale_difference < base_scale_difference * (1 + scale_agreement)
+
+            # 조건 만족하면 consistent_set에 추가
+            if orientation_difference and scale_difference:
+                consistent_set.append((k, l))
+        
+        # 이전과 비교하여 가장 큰 집합 찾기
+        if len(consistent_set) > len(largest_set):
+            largest_set = consistent_set
+
     ## END
     assert isinstance(largest_set, list)
     return largest_set
