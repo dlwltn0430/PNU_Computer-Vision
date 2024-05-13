@@ -168,19 +168,39 @@ def RANSACHomography(xy_src, xy_ref, num_iter, tol):
     h = None
     N = xy_src.shape[0]
 
-    for i in range(num_iter):
+    for _ in range(num_iter):
         sample_indices = np.random.choice(N, 4, replace=False)
         src_sample = xy_src[sample_indices]
         ref_sample = xy_ref[sample_indices]
+        ## 수정한 부분 START
+        # H = cv2.findHomography(src_sample, ref_sample)
+        # xy_res = KeypointProjection(xy_src, H[0])
+        # res_dis = np.sqrt(np.sum((xy_res - xy_ref)**2, axis=1))
+        # inlier = np.sum(res_dis < tol)
+        
+        # Ax = 0에서 A 만들기
+        A = []
+        for (x1, y1), (x2, y2) in zip(src_sample, ref_sample):
+            A.append([x1, y1, 1, 0, 0, 0, -x2*x1, -x2*y1, -x2])
+            A.append([0, 0, 0, x1, y1, 1, -y2*x1, -y2*y1, -y2])
+        A = np.array(A)
 
-        H = cv2.findHomography(src_sample, ref_sample)
-        xy_res = KeypointProjection(xy_src, H[0])
-        res_dis = np.sqrt(np.sum((xy_res - xy_ref)**2, axis=1))
-        inlier = np.sum(res_dis < tol)
-
+        eigenvalues, eigenvectors = np.linalg.eig(A.T @ A) # solve the non-trivial problem
+        H = eigenvectors[:, np.argmin(np.abs(eigenvalues))]  # 가장 작은 고유값에 해당하는 고유벡터 선택
+        H = H.reshape(3, 3) # H는 3*3 matrix
+        
+        xy_res = KeypointProjection(xy_src, H) # 모든 matched pairs에 H matrix 적용
+        res_dis = np.sqrt(np.sum((xy_res - xy_ref)**2, axis=1)) # dis 계산
+        inlier = np.sum(res_dis < tol) # dis < tol인 것이 몇 개인지 세기
+        
+        # maximum inlier 찾기
         if inlier > max_inliers:
-            h = H[0]
+            h = H
             max_inliers = inlier
+        ## 수정한 부분 END
+        # if inlier > max_inliers:
+        #     h = H[0]
+        #     max_inliers = inlier
     # END
     assert isinstance(h, np.ndarray)
     assert h.shape == (3, 3)

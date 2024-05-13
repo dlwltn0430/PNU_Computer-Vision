@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os.path as op
 sys.path = ['../lib'] + sys.path
 import hw_utils as utils
-path = './data/'
+path = 'hw4/data/'
 
 def create_pano(
         image_list, ratio_thres,
