@@ -29,7 +29,7 @@ def RANSACFilter(
     assert isinstance(keypoints2, np.ndarray)
     assert isinstance(orient_agreement, float)
     assert isinstance(scale_agreement, float)
-    ## START
+    
     largest_set = []
 
     for _ in range(10):
@@ -40,7 +40,7 @@ def RANSACFilter(
         row_i, col_i, scale_i, orientation_i = keypoints1[i]
         row_j, col_j, scale_j, orientation_j = keypoints2[j]
         
-        # orientation 차이, scale 차이 계산
+        # orientation 차이, scale 비율 계산
         base_orientation_difference = (orientation_j - orientation_i) % (2 * np.pi)
         base_scale_difference = scale_j / scale_i
 
@@ -51,7 +51,7 @@ def RANSACFilter(
             row_k, col_k, scale_k, orientation_k = keypoints1[k]
             row_l, col_l, scale_l, orientation_l = keypoints2[l]
             
-            # orientation 차이, scale 차이 계산
+            # orientation 차이, scale 비율 계산
             orientation_difference = (orientation_l - orientation_k) % (2 * np.pi)
             scale_difference = scale_l / scale_k
 
@@ -67,7 +67,6 @@ def RANSACFilter(
         if len(consistent_set) > len(largest_set):
             largest_set = consistent_set
 
-    ## END
     assert isinstance(largest_set, list)
     return largest_set
 
@@ -91,23 +90,23 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
     assert isinstance(descriptors1, np.ndarray)
     assert isinstance(descriptors2, np.ndarray)
     assert isinstance(threshold, float)
-    ## START
-    y1 = descriptors1.shape[0]
-    y2 = descriptors2.shape[0]
-    temp = np.zeros(y2)
+
+    y1 = descriptors1.shape[0]  # 첫 번째 이미지의 descriptor 개수
+    y2 = descriptors2.shape[0] # 두 번째 이미지의 descriptor 개수 
+    temp = np.zeros(y2) # 두 descriptor(vector) 사이의 각도를 담을 배열
     matched_pairs = []
 
+    # 첫 번째 이미지의 각 descriptor에 대해(i) 두 번째 이미지의 모든 descriptor와의 각도 계산 후 temp에 저장
     for i in range(y1):
         for j in range(y2):
             temp[j] = math.acos(np.dot(descriptors1[i], descriptors2[j]))
         
+        # 두 descriptor 사이의 각도를 오름차순으로 정렬하고 그 인덱스를 반환 
         compare = sorted(range(len(temp)), key= lambda k : temp[k])
+        # ratio distance가 threshold보다 작으면 unambiguous matches라고 판단하고 matched_pairs에 추가
         if (temp[compare[0]] / temp[compare[1]]) < threshold:
             matched_pairs.append([i, compare[0]])
-    ## the following is just a placeholder to show you the output format
-    # num = 5
-    # matched_pairs = [[i, i] for i in range(num)]
-    ## END
+
     return matched_pairs
 
 
@@ -126,14 +125,17 @@ def KeypointProjection(xy_points, h):
     assert isinstance(h, np.ndarray)
     assert xy_points.shape[1] == 2
     assert h.shape == (3, 3)
-
-    # START
+    # xy_points를 homogeneous coordinate로 변환
     hc_xys = np.pad(xy_points, pad_width=((0, 0), (0, 1)), mode='constant', constant_values=1)
+    # homography matrix * hc_xys의 transpose로 projection 수행
     xys_p = h @ hc_xys.T
+    # xys_p의 마지막 행이 0이라면 1e10으로 바꿔줌으로써 0으로 나누는 것을 방지
     z_cor = np.where(xys_p[-1, :] == 0, 0.0000001, xys_p[-1, :])
+    # xys_p를 z_cor로 나누어 정규화
     hc_xys_p = xys_p / z_cor
+    # 마지막 행(z 좌표)를 제외하여 regular coordinate(2D 좌표)로 변환
     xys_p = hc_xys_p[:-1, :]
-    # END
+    
     return xys_p.T
 
 def RANSACHomography(xy_src, xy_ref, num_iter, tol):
@@ -161,24 +163,18 @@ def RANSACHomography(xy_src, xy_ref, num_iter, tol):
     assert xy_src.shape[1] == 2
     assert isinstance(num_iter, int)
     assert isinstance(tol, (int, float))
-    tol = tol*1.0
 
-    # START
+    tol = tol*1.0
     max_inliers = 0
     h = None
     N = xy_src.shape[0]
 
     for _ in range(num_iter):
-        sample_indices = np.random.choice(N, 4, replace=False)
+        sample_indices = np.random.choice(N, 4, replace=False) # 4개의 random pairs 선택하기
         src_sample = xy_src[sample_indices]
         ref_sample = xy_ref[sample_indices]
-        ## 수정한 부분 START
-        # H = cv2.findHomography(src_sample, ref_sample)
-        # xy_res = KeypointProjection(xy_src, H[0])
-        # res_dis = np.sqrt(np.sum((xy_res - xy_ref)**2, axis=1))
-        # inlier = np.sum(res_dis < tol)
-        
-        # Ax = 0에서 A 만들기
+
+        # Ah = 0에서 A 만들기
         A = []
         for (x1, y1), (x2, y2) in zip(src_sample, ref_sample):
             A.append([x1, y1, 1, 0, 0, 0, -x2*x1, -x2*y1, -x2])
@@ -186,22 +182,18 @@ def RANSACHomography(xy_src, xy_ref, num_iter, tol):
         A = np.array(A)
 
         eigenvalues, eigenvectors = np.linalg.eig(A.T @ A) # solve the non-trivial problem
-        H = eigenvectors[:, np.argmin(np.abs(eigenvalues))]  # 가장 작은 고유값에 해당하는 고유벡터 선택
+        H = eigenvectors[:, np.argmin(np.abs(eigenvalues))]  # 가장 작은 eigen value에 해당하는 eigen vector 선택
         H = H.reshape(3, 3) # H는 3*3 matrix
         
         xy_res = KeypointProjection(xy_src, H) # 모든 matched pairs에 H matrix 적용
         res_dis = np.sqrt(np.sum((xy_res - xy_ref)**2, axis=1)) # dis 계산
-        inlier = np.sum(res_dis < tol) # dis < tol인 것이 몇 개인지 세기
+        inlier = np.sum(res_dis < tol) # dis < tol인 것이 몇 개인지 세기 (=inlier 개수)
         
         # maximum inlier 찾기
         if inlier > max_inliers:
             h = H
             max_inliers = inlier
-        ## 수정한 부분 END
-        # if inlier > max_inliers:
-        #     h = H[0]
-        #     max_inliers = inlier
-    # END
+
     assert isinstance(h, np.ndarray)
     assert h.shape == (3, 3)
     return h

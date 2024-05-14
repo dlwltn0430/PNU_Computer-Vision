@@ -330,4 +330,5 @@ def VisualizePointProj(xy_src, xy_ref, xy_proj, im_src, im_ref):
     axes[1].scatter(xy_ref[:, 0], xy_ref[:, 1], c='#d63447', s=dotsize, marker='.')
     axes[1].title.set_text('Reference Image')
     fig.show()
+    plt.savefig('2-1.png', bbox_inches='tight', pad_inches=0)
     input('Press any key to exit the program')
