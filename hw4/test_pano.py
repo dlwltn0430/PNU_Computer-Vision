@@ -7,7 +7,7 @@ import pickle as pkl
 import hw_utils as utils
 
 def main():
-    path = './data/'
+    path = 'hw4/data/'
     image_list = ['Hanging1', 'Hanging2']
     image_list = [op.join(path, im) for im in image_list]
     # the dimension of the canvas (numpy array)
@@ -16,7 +16,7 @@ def main():
     canvas_height = 600
 
     # some precomputed data for sanity check
-    with open('./data/test.pkl', 'rb') as f:
+    with open('hw4/data/test.pkl', 'rb') as f:
         test_dict = pkl.load(f)
     h_gt = test_dict['h']  # the homograph matrix we computed
 

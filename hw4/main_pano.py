@@ -41,15 +41,19 @@ def create_pano(
     # show the final panorama
     plt.figure(figsize=figsize)
     plt.imshow(result)
+    plt.axis('off')
+    plt.savefig('2-2-3.png', bbox_inches='tight', pad_inches=0)
     plt.show()
 
 
 def main():
-    canvas_height = 600
-    canvas_width = 1000
-    image_list = ['Rainier1', 'Rainier2', 'Rainier3','Rainier4','Rainier5','Rainier6']
+    canvas_height = 1600
+    canvas_width = 2000
+    # image_list = ['fountain4', 'fountain0']
+    # image_list = ['garden0',  'garden3', 'garden4']
+    image_list = ['irving_out3', 'irving_out6', 'irving_out5']
 
-    num_iter = 50
+    num_iter = 2000
     tol = 10
     ratio_thres = 0.9
     image_list = [op.join(path, im) for im in image_list]
